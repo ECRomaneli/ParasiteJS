@@ -13,10 +13,17 @@
             return this;
         }
 
-        public concat(arrLike) {
-            each(arrLike, (_, el) => {
+        public concat(obj) {
+            if (!obj) { return this; }
+
+            if (!obj.length) {
+                return this.push(obj);
+            }
+
+            each(obj, (_, el) => {
                 this.push(el);
             });
+
             return this;
         }
     }

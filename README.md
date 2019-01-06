@@ -87,10 +87,10 @@ The ParasiteJS create a variable called ``p$``. That provides static functions a
     p$(handler: Function): void
 
     // Array of HTMLElements
-    p$(elemArr: HTMLElement[]): mQuery
+    p$(elemArr: HTMLElement[]): ParasitedList
 
     // HTML Element
-    m$(elem: HTMLElement): mQuery
+    p$(elem: HTMLElement): ParasitedList
 ```
 
 #### Static Helpers
