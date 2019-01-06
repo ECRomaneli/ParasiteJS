@@ -1,0 +1,8 @@
+lib/
+dist/web/
+.circleci/
+
+build.sh
+tsconfig.json
+.gitignore
+.npmignore
