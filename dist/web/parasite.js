@@ -11,9 +11,15 @@
             this[this.length++] = el;
             return this;
         };
-        ParasitedList.prototype.concat = function (arrLike) {
+        ParasitedList.prototype.concat = function (obj) {
             var _this = this;
-            each(arrLike, function (_, el) {
+            if (!obj) {
+                return this;
+            }
+            if (!obj.length) {
+                return this.push(obj);
+            }
+            each(obj, function (_, el) {
                 _this.push(el);
             });
             return this;

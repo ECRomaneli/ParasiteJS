@@ -12,8 +12,14 @@
             this[this.length++] = el;
             return this;
         }
-        concat(arrLike) {
-            each(arrLike, (_, el) => {
+        concat(obj) {
+            if (!obj) {
+                return this;
+            }
+            if (!obj.length) {
+                return this.push(obj);
+            }
+            each(obj, (_, el) => {
                 this.push(el);
             });
             return this;
