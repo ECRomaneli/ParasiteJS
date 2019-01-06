@@ -12,6 +12,12 @@
             this[this.length++] = el;
             return this;
         }
+        concat(arrLike) {
+            each(arrLike, (_, el) => {
+                this.push(el);
+            });
+            return this;
+        }
     }
     ParasitedList.prototype.splice = Array.prototype.splice;
     class Null {
@@ -297,7 +303,7 @@
     function createEvent(src, extraProperties) {
         let event, type;
         type = src.length ? src : src.type;
-        if (WIN && WIN['CustomEvent']) {
+        if (WIN && CustomEvent) {
             event = new CustomEvent(type, { bubbles: true, cancelable: true });
         }
         else {
@@ -359,6 +365,35 @@
     function hasLength(arr) {
         return arr && arr.length !== void 0;
     }
+    /**
+     * Verify the type of object passed and compare.
+     */
+    function isType(obj, types) {
+        let match = Array.isArray(obj) ? 'array' : (typeof obj), some = (type) => {
+            if (match === type) {
+                return true;
+            }
+            if (type === 'document') {
+                return obj instanceof Document;
+            }
+            if (type === 'window') {
+                return obj instanceof Window;
+            }
+            if (type === 'parasited') {
+                return obj instanceof ParasitedList
+                    || obj instanceof NodeList
+                    || obj instanceof HTMLCollection
+                    || obj instanceof Element
+                    || obj instanceof Document
+                    || obj instanceof Window;
+            }
+            return false;
+        };
+        if (Array.isArray(types)) {
+            return types.some(some);
+        }
+        return some(types);
+    }
     function isSet(param) {
         return !(param === void 0 || param === null);
     }
@@ -370,6 +405,16 @@
         const script = DOC.createElement('script');
         script.text = code;
         DOC.head.appendChild(script).parentNode.removeChild(script);
+    }
+    /**
+     * Transform HTML/XML code to list of elements.
+     * @param htmlString HTML/XML code.
+     */
+    function parseHTML(htmlString) {
+        AUX.innerHTML = htmlString;
+        let returnArr = (new ParasitedList).concat(AUX.childNodes);
+        emptyElement(AUX);
+        return returnArr;
     }
     /**
      * Bind some JavaScript file globally.
@@ -399,13 +444,13 @@
      */
     function requestBuilder(method, urlOrOptions, dataOrSuccess, success) {
         let options, data;
-        if (typeof urlOrOptions === 'string') {
+        if (isType(urlOrOptions, 'string')) {
             options = { url: urlOrOptions };
         }
         else {
             options = urlOrOptions;
         }
-        if (typeof dataOrSuccess === 'function') {
+        if (isType(urlOrOptions, 'function')) {
             success = dataOrSuccess;
         }
         else {
@@ -418,7 +463,7 @@
     }
     function ajax(url, options = {}) {
         let dfrr = new Deferred(), request;
-        if (typeof url === 'string') {
+        if (isType(url, 'string')) {
             options.url = url;
         }
         else {
@@ -721,10 +766,25 @@
     //     return typeof length === "number" && (length === 0 || (length > 0 && (length - 1) in obj));
     // }
     /* =============== GLOBAL =============== */
-    const p$ = (selector) => DOC.find(selector);
+    const p$ = (selector) => {
+        if (isType(selector, 'function')) {
+            return ready(selector);
+        }
+        if (isType(selector, ['document', 'window'])) {
+            return selector;
+        }
+        if (!isType(selector, 'string')) {
+            return (new ParasitedList).concat(selector);
+        }
+        if (selector.indexOf('<') !== -1) {
+            return parseHTML(selector);
+        }
+        return DOC.find(selector);
+    };
     p$.Deferred = (beforeStart) => new Deferred(beforeStart);
     p$.isNull = (obj) => obj === NULL || obj === null;
     p$.globalEval = globalEval;
+    p$.parseHTML = parseHTML;
     p$.require = require;
     p$.debug = debug;
     p$.ready = ready;
