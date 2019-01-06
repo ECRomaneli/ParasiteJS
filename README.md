@@ -21,8 +21,8 @@ The javascript does not have functions to manipulate the lists returned by the s
 
 The ParasiteJS functions are available in collections and elements making these functions always available into the elements. The functions are based on jQuery but are NOT compatible, so check out the documentation below.
 
-
-    This project does not objective the module creation. This is a lightweight and faster alternative than jQuery for "Do not use jQuery" projects where jQuery is not a dependency.
+### Warning
+This project does not objective the module creation. This is a lightweight and faster alternative than jQuery for "Do not use jQuery" projects where jQuery is not a dependency.
 
 ## Install
 
@@ -36,13 +36,19 @@ Require ``parasitejs`` and he goes modify lists, collections and elements:
 ```typescript
     require('parasitejs')
 
-    p$.ready(() => {
-        let elem = document.find('tag.class#id[attr="value"]')
-        elem.findTag('tag')     // Return collection
+    p$(() => {
+
+        // Same as document.find
+        let $el = p$('tag.class#id[attr="value"]')
+
+        $el = $el.find('selector')
+
+        $el .findTag('tag')     // Return collection
             .findId('id')       // Return element
             .findClass('class') // Return collection 
             .find('selector')   // Return list
             .css({ style: 'value' });
+
     })
 ``` 
 
@@ -52,13 +58,19 @@ Download script into **/dist/web/** folder and import normally:
     <script type="text/javascript" src="parasite.min.js"/>
 
     <script>
-        p$.ready(() => { 
-            let elem = document.find('tag.class#id[attr="value"]')
-            elem.findTag('tag')     // Return collection
+        p$(() => { 
+
+            // Same as document.find
+            let $el = p$('tag.class#id[attr="value"]')
+
+            $el = $el.find('selector')
+
+            $el .findTag('tag')     // Return collection
                 .findId('id')       // Return element
                 .findClass('class') // Return collection 
                 .find('selector')   // Return list
                 .css({ style: 'value' });
+
         });
     </script>
 ``` 
@@ -68,9 +80,17 @@ The ParasiteJS create a variable called ``p$``. That provides static functions a
 
 ### jQuery-like Function
 ```typescript
-    p$(selector: string): ParasitedList|NodeList|HTMLCollection
-    // as the same of
-    document.find(selector);
+    // Find selector and return collection
+    p$(selector: string): ParasitedList | NodeList | HTMLCollection
+
+    // on ready callback
+    p$(handler: Function): void
+
+    // Array of HTMLElements
+    p$(elemArr: HTMLElement[]): mQuery
+
+    // HTML Element
+    m$(elem: HTMLElement): mQuery
 ```
 
 #### Static Helpers

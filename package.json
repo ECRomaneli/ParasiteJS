@@ -1,12 +1,26 @@
 {
     "name": "parasitejs",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Use javascript the way you want, fast as possible.",
     "scripts": {
         "build": "bash build.sh",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "author": "ECRomaneli",
+    "keywords": [
+        "parasite",
+        "parasitejs",
+        "mquery",
+        "jquery",
+        "node",
+        "htmlelement",
+        "html",
+        "dom",
+        "dom-manipulation",
+        "event-listener",
+        "jquery-like",
+        "lightweight"
+    ],
     "devDependencies": {
         "typescript": "3.2.2",
         "uglify-js": "3.4.9"

@@ -11,6 +11,13 @@
             this[this.length++] = el;
             return this;
         };
+        ParasitedList.prototype.concat = function (arrLike) {
+            var _this = this;
+            each(arrLike, function (_, el) {
+                _this.push(el);
+            });
+            return this;
+        };
         return ParasitedList;
     }());
     ParasitedList.prototype.splice = Array.prototype.splice;
@@ -308,7 +315,7 @@
     function createEvent(src, extraProperties) {
         var event, type;
         type = src.length ? src : src.type;
-        if (WIN && WIN['CustomEvent']) {
+        if (WIN && CustomEvent) {
             event = new CustomEvent(type, { bubbles: true, cancelable: true });
         }
         else {
@@ -370,6 +377,35 @@
     function hasLength(arr) {
         return arr && arr.length !== void 0;
     }
+    /**
+     * Verify the type of object passed and compare.
+     */
+    function isType(obj, types) {
+        var match = Array.isArray(obj) ? 'array' : (typeof obj), some = function (type) {
+            if (match === type) {
+                return true;
+            }
+            if (type === 'document') {
+                return obj instanceof Document;
+            }
+            if (type === 'window') {
+                return obj instanceof Window;
+            }
+            if (type === 'parasited') {
+                return obj instanceof ParasitedList
+                    || obj instanceof NodeList
+                    || obj instanceof HTMLCollection
+                    || obj instanceof Element
+                    || obj instanceof Document
+                    || obj instanceof Window;
+            }
+            return false;
+        };
+        if (Array.isArray(types)) {
+            return types.some(some);
+        }
+        return some(types);
+    }
     function isSet(param) {
         return !(param === void 0 || param === null);
     }
@@ -381,6 +417,16 @@
         var script = DOC.createElement('script');
         script.text = code;
         DOC.head.appendChild(script).parentNode.removeChild(script);
+    }
+    /**
+     * Transform HTML/XML code to list of elements.
+     * @param htmlString HTML/XML code.
+     */
+    function parseHTML(htmlString) {
+        AUX.innerHTML = htmlString;
+        var returnArr = (new ParasitedList).concat(AUX.childNodes);
+        emptyElement(AUX);
+        return returnArr;
     }
     /**
      * Bind some JavaScript file globally.
@@ -410,13 +456,13 @@
      */
     function requestBuilder(method, urlOrOptions, dataOrSuccess, success) {
         var options, data;
-        if (typeof urlOrOptions === 'string') {
+        if (isType(urlOrOptions, 'string')) {
             options = { url: urlOrOptions };
         }
         else {
             options = urlOrOptions;
         }
-        if (typeof dataOrSuccess === 'function') {
+        if (isType(urlOrOptions, 'function')) {
             success = dataOrSuccess;
         }
         else {
@@ -430,7 +476,7 @@
     function ajax(url, options) {
         if (options === void 0) { options = {}; }
         var dfrr = new Deferred(), request;
-        if (typeof url === 'string') {
+        if (isType(url, 'string')) {
             options.url = url;
         }
         else {
@@ -751,10 +797,25 @@
     //     return typeof length === "number" && (length === 0 || (length > 0 && (length - 1) in obj));
     // }
     /* =============== GLOBAL =============== */
-    var p$ = function (selector) { return DOC.find(selector); };
+    var p$ = function (selector) {
+        if (isType(selector, 'function')) {
+            return ready(selector);
+        }
+        if (isType(selector, ['document', 'window'])) {
+            return selector;
+        }
+        if (!isType(selector, 'string')) {
+            return (new ParasitedList).concat(selector);
+        }
+        if (selector.indexOf('<') !== -1) {
+            return parseHTML(selector);
+        }
+        return DOC.find(selector);
+    };
     p$.Deferred = function (beforeStart) { return new Deferred(beforeStart); };
     p$.isNull = function (obj) { return obj === NULL || obj === null; };
     p$.globalEval = globalEval;
+    p$.parseHTML = parseHTML;
     p$.require = require;
     p$.debug = debug;
     p$.ready = ready;
