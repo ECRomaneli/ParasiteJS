@@ -1,4 +1,4 @@
-(function () {
+export var p$ = (function () {
     class ParasitedList {
         [key: string]: any;
         [index: number]: Node;
@@ -16,13 +16,8 @@
         public concat(obj) {
             if (!obj) { return this; }
 
-            if (!obj.length) {
-                return this.push(obj);
-            }
-
-            each(obj, (_, el) => {
-                this.push(el);
-            });
+            if (!obj.length) { return this.push(obj); }
+            each(obj, (_, el) => { this.push(el); });
 
             return this;
         }
@@ -35,7 +30,7 @@
     interface DOC extends Document { [key: string]: any }
     interface WIN extends Window { [key: string]: any }
 
-    const GITHUB_URL = 'github/parasitejs'
+    const GITHUB_URL = 'github/parasitejs';
     const LISTS = [NodeList, HTMLCollection, ParasitedList];
     const ALL = [Document, Element, Window];
     const DOC_AND_ELEMS = [Document, Element];
@@ -86,7 +81,7 @@
             return handler.apply(el, arguments);
         }
 
-        return types.split(' ').forEach((type) => { this.addEventListener(type, handler.__handler__, capture); });
+        return eachTokens(types, (type) => { this.addEventListener(type, handler.__handler__, capture); });
     }
 
     pjs.one = function (types, handler, capture?) {
@@ -97,7 +92,7 @@
             return handler.apply(el, arguments);
         }
 
-        return types.split(' ').forEach((type) => {
+        return eachTokens(types, (type) => {
             this.addEventListener(type, handler.__handler__, capture);
         });
     }
@@ -105,7 +100,7 @@
     pjs.off = function (types, handler, capture?) {
         if (handler.__handler__) { handler = handler.__handler__; }
 
-        return types.split(' ').forEach((type) => {
+        return eachTokens(types, (type) => {
             this.removeEventListener(type, handler, capture);
         });
     }
@@ -151,6 +146,20 @@
 
     pjs.val = function (value?) { return this.prop('value', value); }
 
+    pjs.text = function (text) {
+        if (isSet(text)) {
+            return this.textContent;
+        }
+        this.textContent = text;
+    }
+
+    pjs.html = function (htmlStr?) {
+        if (!isSet(htmlStr)) {
+            return this.innerHTML;
+        }
+        this.innerHTML = htmlStr;
+    }
+
     pjs.data = function (key?, value?) {
         if (!this.__dataset__) {
             this.__dataset__ = {};
@@ -162,19 +171,16 @@
         if (!isSet(key)) { return this.__dataset__; }
 
         if (isSet(value)) {
-            this.dataset[key] = value;
+            this.__dataset__[key] = value;
             return this;
         }
 
         let data = this.__dataset__[key];
-
-        if (isSet(data)) {
-            return data;
-        }
+        if (isSet(data)) { return data; }
 
         data = this.attr(key);
-
         if (!isSet(data)) { return; }
+
         return this.__dataset__[key] = jsonParse(data);
     }
 
@@ -239,19 +245,29 @@
         return el === NULL ? NULL : (new ParasitedList).push(el);
     }
 
+    pjs.not = function (filter) {
+        return this.filter(typeof filter === 'string' ?
+            (_, elem) => !matches(elem, filter) :
+            (i, elem) => !filter.call(elem, i, elem)
+        );
+    }
+
     pjs.findAll = function (selector) {
         return this.querySelectorAll(selector);
     }
 
     pjs.findId = function (id) {
         let el = DOC.getElementById(id), parent;
+
         if (el) {
             if (this === DOC) { return el; }
+
             parent = el.parentNode;
             do {
                 if (parent === this) { return el; }
             } while (parent = parent.parentNode);
         }
+
         return NULL;
     }
 
@@ -281,11 +297,50 @@
         });
     }
 
+    pjs.children = function (selector?) {
+        let c = this.children;
+        return selector ? c.filter(selector) : c;
+    }
+
+    pjs.prepend = function () {
+        setChildren(arguments,
+            (child) => { this.insertBefore(child, this.firstChild) },
+            (str) => { this.insertAdjacentHTML('afterbegin', str) },
+            true);
+    }
+
+    pjs.prependTo = function (selector?) {
+        DOC.find(selector).prepend(this);
+        return this;
+    }
+
+    pjs.append = function () {
+        setChildren(arguments,
+            (child) => { this.appendChild(child) },
+            (str) => { this.insertAdjacentHTML('beforeend', str) });
+    }
+
+    pjs.appendTo = function (selector?) {
+        DOC.find(selector).append(this);
+        return this;
+    }
+
     pjs.parent = function (selector?) {
         let elem = this.parentElement;
         if (elem && matches(elem, selector)) {
             return elem;
         }
+    }
+
+    pjs.parents = function (selector?) {
+        let parents = new ParasitedList, newParents = this.parent();
+
+        do {
+            parents.concat(newParents);
+            newParents = newParents.parent();
+        } while (newParents.length);
+
+        return parents.filter(selector);
     }
 
     pjs.each = function (iterator) {
@@ -295,6 +350,46 @@
     pjs.get = function (index: number) {
         if (index < 0) { index = this.length + index }
         return index < this.length ? this[index] : void 0;
+    }
+
+    pjs.hasClass = function (className: string) {
+        return eachTokens(className, (name) => {
+            return this.classList.contains(name);
+        });
+    }
+
+    pjs.addClass = function (className: string) {
+        eachTokens(className, (name) => {
+            this.classList.add(name);
+        });
+    }
+
+    pjs.removeClass = function (className: string) {
+        eachTokens(className, (name) => {
+            this.classList.remove(name);
+        });
+    }
+
+    pjs.toggleClass = function (className: string) {
+        eachTokens(className, (name) => {
+            this.classList.toggle(name);
+        });
+    }
+
+    pjs.remove = function (selector?: string) {
+        if (!matches(this, selector)) { return; }
+
+        if (this.remove) {
+            this.remove();
+        } else if (this.removeNode) {
+            this.removeNode();
+        } else {
+            this.outerHTML = '';
+        }
+    }
+
+    pjs.empty = function () {
+        emptyElement(this);
     }
 
     /* =============== PARASITE FUNCTIONS =============== */
@@ -307,21 +402,38 @@
     setListFn('findClass', DOC_AND_ELEMS);
     setListFn('findAll', DOC_AND_ELEMS);
     setListFn('find', DOC_AND_ELEMS);
+    setListFn('parents', ELEMS);
     setListFn('parent', ELEMS);
+    setListFn('children', DOC_AND_ELEMS);
     setFirstFn('is', ELEMS);
     setFn('filter', LISTS);
+    setFn('not', LISTS);
     setFn('get', LISTS);
+    // CLASSES
+    setEachFn('addClass', ELEMS);
+    setEachFn('toogleClass', ELEMS);
+    setEachFn('removeClass', ELEMS);
+    setFirstFn('hasClass', ELEMS);
     // EVENTS
     setEachFn('on', ALL);
     setEachFn('one', ALL);
     setEachFn('off', ALL);
     setEachFn('trigger', ALL);
+    // ELEMENT MANIPULATION
+    setEachFn('prepend', ELEMS);
+    setEachFn('prependTo', ELEMS);
+    setEachFn('append', ELEMS);
+    setEachFn('appendTo', ELEMS);
+    setEachFn('remove', ELEMS);
+    setEachFn('empty', DOC_AND_ELEMS);
     // ATTRS AND PROPS
     setAcessorFn('attr', ELEMS);
     setEachFn('removeAttr', ELEMS);
     setAcessorFn('prop', ELEMS);
     setEachFn('removeProp', ELEMS);
     setAcessorFn('val', ELEMS);
+    setConcatFn('text', DOC_AND_ELEMS);
+    setFirstFn('html', ELEMS);
     setAcessorFn('data', ELEMS);
     // STYLE
     setAcessorFn('css', ELEMS);
@@ -343,7 +455,7 @@
     }
 
     function emptyElement(el: Node): void {
-        while (el.lastChild) { el.removeChild(el.lastChild) }
+        while (el.lastChild) { el.removeChild(el.lastChild); }
     }
 
     function createEvent(src, extraProperties?) {
@@ -472,6 +584,43 @@
         const script = DOC.createElement('script');
         script.src = file;
         DOC.body.appendChild(script);
+    }
+
+    function setChildren(children: ArrayLike<string | number | ArrayLike<any>>, elemInsertFn: Function, stringInsertFn: Function, reverse?): void {
+        let forEach, length = children.length;
+
+        if (reverse) {
+            forEach = (fn) => {
+                for (let i = length - 1; i >= 0; i--) {
+                    fn(children[i]);
+                }
+            }
+        } else {
+            forEach = (fn) => {
+                for (let i = 0; i < length; i++) {
+                    fn(children[i]);
+                }
+            }
+        }
+
+        forEach((child) => {
+            // If arrayLike
+            if (isArrayLike(child)) {
+                return setChildren(child, elemInsertFn, stringInsertFn);
+            }
+
+            // If string
+            if (isType(child, ['string', 'number'])) {
+                return stringInsertFn(child);
+            }
+
+            // If node with no parent
+            if (!child.parentElement) {
+                return elemInsertFn(child);
+            }
+
+            return stringInsertFn(child.outerHTML);
+        });
     }
 
     function ready(handler) {
@@ -852,15 +1001,40 @@
         });
     }
 
-    // function isArrayLike(obj): boolean {
-    //     if (Array.isArray(obj)) { return true; }
-    //     if (typeof obj === 'function'
-    //     ||  typeof obj === 'string'
-    //     ||  obj instanceof Window) { return false; }
+    function setConcatFn(fnName, classes) {
+        // Set function on classes
+        setFn(fnName, classes);
 
-    //     let length = obj.length;
-    //     return typeof length === "number" && (length === 0 || (length > 0 && (length - 1) in obj));
-    // }
+        // Set function to set or concat all return values
+        setFn(fnName, LISTS, function () {
+            let args = arguments;
+            if (args.length) {
+                return each(this, (_, el) => {
+                    return el[fnName].apply(el, args);
+                });
+            }
+
+            let value = ''
+            each(this, (_, el) => {
+                value += el[fnName]() || '';
+            });
+            return value.trim() || void 0;
+        });
+    }
+
+    function isArrayLike(obj): boolean {
+        if (Array.isArray(obj)) { return true; }
+        if (typeof obj === 'function'
+        ||  typeof obj === 'string'
+        ||  obj instanceof Window) { return false; }
+
+        let length = obj.length;
+        return typeof length === "number" && (length === 0 || (length > 0 && (length - 1) in obj));
+    }
+
+    function eachTokens(rawTokens: string, iterator: (token: string) => any): boolean {
+        return rawTokens.split(' ').some(iterator);
+    }
 
     /* =============== GLOBAL =============== */
 
@@ -890,5 +1064,5 @@
     p$.ajax = ajax;
     p$.post = post;
     p$.get = get;
-    WIN.p$ = p$;
+    return p$;
 }) ();
