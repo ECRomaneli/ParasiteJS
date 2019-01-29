@@ -30,7 +30,7 @@ export var p$ = (function () {
     interface DOC extends Document { [key: string]: any }
     interface WIN extends Window { [key: string]: any }
 
-    const GITHUB_URL = 'github/parasitejs';
+    const GITHUB_URL = 'github.com/ECRomaneli/ParasiteJS';
     const LISTS = [NodeList, HTMLCollection, ParasitedList];
     const ALL = [Document, Element, Window];
     const DOC_AND_ELEMS = [Document, Element];
@@ -147,7 +147,7 @@ export var p$ = (function () {
     pjs.val = function (value?) { return this.prop('value', value); }
 
     pjs.text = function (text) {
-        if (isSet(text)) {
+        if (!isSet(text)) {
             return this.textContent;
         }
         this.textContent = text;
@@ -297,15 +297,19 @@ export var p$ = (function () {
         });
     }
 
-    pjs.children = function (selector?) {
+    pjs.findChildren = function (selector?) {
         let c = this.children;
         return selector ? c.filter(selector) : c;
     }
 
     pjs.prepend = function () {
+        if (this.native_prepend) {
+            return this.native_prepend.apply(this, arguments);
+        }
+
         setChildren(arguments,
             (child) => { this.insertBefore(child, this.firstChild) },
-            (str) => { this.insertAdjacentHTML('afterbegin', str) },
+            (str) => { this.textContent = str + this.textContent; },
             true);
     }
 
@@ -315,9 +319,13 @@ export var p$ = (function () {
     }
 
     pjs.append = function () {
+        if (this.native_append) {
+            return this.native_append.apply(this, arguments);
+        }
+
         setChildren(arguments,
             (child) => { this.appendChild(child) },
-            (str) => { this.insertAdjacentHTML('beforeend', str) });
+            (str) => { this.textContent += str; });
     }
 
     pjs.appendTo = function (selector?) {
@@ -376,11 +384,12 @@ export var p$ = (function () {
         });
     }
 
+    // Rename
     pjs.remove = function (selector?: string) {
         if (!matches(this, selector)) { return; }
 
-        if (this.remove) {
-            this.remove();
+        if (this.native_remove) {
+            this.native_remove();
         } else if (this.removeNode) {
             this.removeNode();
         } else {
@@ -404,14 +413,14 @@ export var p$ = (function () {
     setListFn('find', DOC_AND_ELEMS);
     setListFn('parents', ELEMS);
     setListFn('parent', ELEMS);
-    setListFn('children', DOC_AND_ELEMS);
+    setListFn('findChildren', DOC_AND_ELEMS);
     setFirstFn('is', ELEMS);
     setFn('filter', LISTS);
     setFn('not', LISTS);
     setFn('get', LISTS);
     // CLASSES
     setEachFn('addClass', ELEMS);
-    setEachFn('toogleClass', ELEMS);
+    setEachFn('toggleClass', ELEMS);
     setEachFn('removeClass', ELEMS);
     setFirstFn('hasClass', ELEMS);
     // EVENTS
@@ -922,11 +931,17 @@ export var p$ = (function () {
             return;
         }
         classes.forEach((cl) => {
-            if (cl.prototype[fnName]) {
-                console.warn(`The property ${fnName} already exists, please describe your issue on ${GITHUB_URL}.`, cl);
-                cl.prototype['old_' + fnName] = cl.prototype[fnName];
+            try {
+                if (cl.prototype[fnName]) {
+                    // console.warn(`The property "${fnName}" already exists, please describe your issue on ${GITHUB_URL}.`);
+                    // console.error('Already exists on: ', cl);
+                    cl.prototype['native_' + fnName] = cl.prototype[fnName];
+                }
+                cl.prototype[fnName] = fn;
+            } catch (e) {
+                console.warn(`The property "${fnName}" is not accessible, please describe your issue on ${GITHUB_URL}.`);
+                console.error(e);
             }
-            cl.prototype[fnName] = fn;
         });
     }
 
