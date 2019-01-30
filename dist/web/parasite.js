@@ -1,4 +1,4 @@
-(function () {
+var p$ = (function () {
     var ParasitedList = /** @class */ (function () {
         function ParasitedList() {
             this.length = 0;
@@ -19,9 +19,7 @@
             if (!obj.length) {
                 return this.push(obj);
             }
-            each(obj, function (_, el) {
-                _this.push(el);
-            });
+            each(obj, function (_, el) { _this.push(el); });
             return this;
         };
         return ParasitedList;
@@ -33,7 +31,7 @@
         return Null;
     }());
     Null.prototype = ParasitedList.prototype;
-    var GITHUB_URL = 'github/parasitejs';
+    var GITHUB_URL = 'github.com/ECRomaneli/ParasiteJS';
     var LISTS = [NodeList, HTMLCollection, ParasitedList];
     var ALL = [Document, Element, Window];
     var DOC_AND_ELEMS = [Document, Element];
@@ -75,7 +73,7 @@
         handler.__handler__ = function () {
             return handler.apply(el, arguments);
         };
-        return types.split(' ').forEach(function (type) { _this.addEventListener(type, handler.__handler__, capture); });
+        return eachTokens(types, function (type) { _this.addEventListener(type, handler.__handler__, capture); });
     };
     pjs.one = function (types, handler, capture) {
         var _this = this;
@@ -84,7 +82,7 @@
             this.removeEventListener(e.type, handler.__handler__, capture);
             return handler.apply(el, arguments);
         };
-        return types.split(' ').forEach(function (type) {
+        return eachTokens(types, function (type) {
             _this.addEventListener(type, handler.__handler__, capture);
         });
     };
@@ -93,7 +91,7 @@
         if (handler.__handler__) {
             handler = handler.__handler__;
         }
-        return types.split(' ').forEach(function (type) {
+        return eachTokens(types, function (type) {
             _this.removeEventListener(type, handler, capture);
         });
     };
@@ -131,6 +129,18 @@
         this.removeAttribute(prop);
     };
     pjs.val = function (value) { return this.prop('value', value); };
+    pjs.text = function (text) {
+        if (!isSet(text)) {
+            return this.textContent;
+        }
+        this.textContent = text;
+    };
+    pjs.html = function (htmlStr) {
+        if (!isSet(htmlStr)) {
+            return this.innerHTML;
+        }
+        this.innerHTML = htmlStr;
+    };
     pjs.data = function (key, value) {
         var _this = this;
         if (!this.__dataset__) {
@@ -143,7 +153,7 @@
             return this.__dataset__;
         }
         if (isSet(value)) {
-            this.dataset[key] = value;
+            this.__dataset__[key] = value;
             return this;
         }
         var data = this.__dataset__[key];
@@ -211,6 +221,11 @@
         var el = this.findId(type[2]); // id
         return el === NULL ? NULL : (new ParasitedList).push(el);
     };
+    pjs.not = function (filter) {
+        return this.filter(typeof filter === 'string' ?
+            function (_, elem) { return !matches(elem, filter); } :
+            function (i, elem) { return !filter.call(elem, i, elem); });
+    };
     pjs.findAll = function (selector) {
         return this.querySelectorAll(selector);
     };
@@ -254,11 +269,45 @@
             return false;
         });
     };
+    pjs.findChildren = function (selector) {
+        var c = this.children;
+        return selector ? c.filter(selector) : c;
+    };
+    pjs.prepend = function () {
+        var _this = this;
+        if (this.native_prepend) {
+            return this.native_prepend.apply(this, arguments);
+        }
+        setChildren(arguments, function (child) { _this.insertBefore(child, _this.firstChild); }, function (str) { _this.textContent = str + _this.textContent; }, true);
+    };
+    pjs.prependTo = function (selector) {
+        DOC.find(selector).prepend(this);
+        return this;
+    };
+    pjs.append = function () {
+        var _this = this;
+        if (this.native_append) {
+            return this.native_append.apply(this, arguments);
+        }
+        setChildren(arguments, function (child) { _this.appendChild(child); }, function (str) { _this.textContent += str; });
+    };
+    pjs.appendTo = function (selector) {
+        DOC.find(selector).append(this);
+        return this;
+    };
     pjs.parent = function (selector) {
         var elem = this.parentElement;
         if (elem && matches(elem, selector)) {
             return elem;
         }
+    };
+    pjs.parents = function (selector) {
+        var parents = new ParasitedList, newParents = this.parent();
+        do {
+            parents.concat(newParents);
+            newParents = newParents.parent();
+        } while (newParents.length);
+        return parents.filter(selector);
     };
     pjs.each = function (iterator) {
         return each(this, iterator);
@@ -269,6 +318,48 @@
         }
         return index < this.length ? this[index] : void 0;
     };
+    pjs.hasClass = function (className) {
+        var _this = this;
+        return eachTokens(className, function (name) {
+            return _this.classList.contains(name);
+        });
+    };
+    pjs.addClass = function (className) {
+        var _this = this;
+        eachTokens(className, function (name) {
+            _this.classList.add(name);
+        });
+    };
+    pjs.removeClass = function (className) {
+        var _this = this;
+        eachTokens(className, function (name) {
+            _this.classList.remove(name);
+        });
+    };
+    pjs.toggleClass = function (className) {
+        var _this = this;
+        eachTokens(className, function (name) {
+            _this.classList.toggle(name);
+        });
+    };
+    // Rename
+    pjs.remove = function (selector) {
+        if (!matches(this, selector)) {
+            return;
+        }
+        if (this.native_remove) {
+            this.native_remove();
+        }
+        else if (this.removeNode) {
+            this.removeNode();
+        }
+        else {
+            this.outerHTML = '';
+        }
+    };
+    pjs.empty = function () {
+        emptyElement(this);
+    };
     /* =============== PARASITE FUNCTIONS =============== */
     // FINDS, PARENTS
     setFirstFn('findId', DOC_AND_ELEMS);
@@ -278,21 +369,38 @@
     setListFn('findClass', DOC_AND_ELEMS);
     setListFn('findAll', DOC_AND_ELEMS);
     setListFn('find', DOC_AND_ELEMS);
+    setListFn('parents', ELEMS);
     setListFn('parent', ELEMS);
+    setListFn('findChildren', DOC_AND_ELEMS);
     setFirstFn('is', ELEMS);
     setFn('filter', LISTS);
+    setFn('not', LISTS);
     setFn('get', LISTS);
+    // CLASSES
+    setEachFn('addClass', ELEMS);
+    setEachFn('toggleClass', ELEMS);
+    setEachFn('removeClass', ELEMS);
+    setFirstFn('hasClass', ELEMS);
     // EVENTS
     setEachFn('on', ALL);
     setEachFn('one', ALL);
     setEachFn('off', ALL);
     setEachFn('trigger', ALL);
+    // ELEMENT MANIPULATION
+    setEachFn('prepend', ELEMS);
+    setEachFn('prependTo', ELEMS);
+    setEachFn('append', ELEMS);
+    setEachFn('appendTo', ELEMS);
+    setEachFn('remove', ELEMS);
+    setEachFn('empty', DOC_AND_ELEMS);
     // ATTRS AND PROPS
     setAcessorFn('attr', ELEMS);
     setEachFn('removeAttr', ELEMS);
     setAcessorFn('prop', ELEMS);
     setEachFn('removeProp', ELEMS);
     setAcessorFn('val', ELEMS);
+    setConcatFn('text', DOC_AND_ELEMS);
+    setFirstFn('html', ELEMS);
     setAcessorFn('data', ELEMS);
     // STYLE
     setAcessorFn('css', ELEMS);
@@ -442,6 +550,38 @@
         var script = DOC.createElement('script');
         script.src = file;
         DOC.body.appendChild(script);
+    }
+    function setChildren(children, elemInsertFn, stringInsertFn, reverse) {
+        var forEach, length = children.length;
+        if (reverse) {
+            forEach = function (fn) {
+                for (var i = length - 1; i >= 0; i--) {
+                    fn(children[i]);
+                }
+            };
+        }
+        else {
+            forEach = function (fn) {
+                for (var i = 0; i < length; i++) {
+                    fn(children[i]);
+                }
+            };
+        }
+        forEach(function (child) {
+            // If arrayLike
+            if (isArrayLike(child)) {
+                return setChildren(child, elemInsertFn, stringInsertFn);
+            }
+            // If string
+            if (isType(child, ['string', 'number'])) {
+                return stringInsertFn(child);
+            }
+            // If node with no parent
+            if (!child.parentElement) {
+                return elemInsertFn(child);
+            }
+            return stringInsertFn(child.outerHTML);
+        });
     }
     function ready(handler) {
         if (DOC.readyState !== 'loading') {
@@ -728,11 +868,18 @@
             return;
         }
         classes.forEach(function (cl) {
-            if (cl.prototype[fnName]) {
-                console.warn("The property " + fnName + " already exists, please describe your issue on " + GITHUB_URL + ".", cl);
-                cl.prototype['old_' + fnName] = cl.prototype[fnName];
+            try {
+                if (cl.prototype[fnName]) {
+                    // console.warn(`The property "${fnName}" already exists, please describe your issue on ${GITHUB_URL}.`);
+                    // console.error('Already exists on: ', cl);
+                    cl.prototype['native_' + fnName] = cl.prototype[fnName];
+                }
+                cl.prototype[fnName] = fn;
             }
-            cl.prototype[fnName] = fn;
+            catch (e) {
+                console.warn("The property \"" + fnName + "\" is not accessible, please describe your issue on " + GITHUB_URL + ".");
+                console.error(e);
+            }
         });
     }
     function setAcessorFn(fnName, classes) {
@@ -794,14 +941,39 @@
             });
         });
     }
-    // function isArrayLike(obj): boolean {
-    //     if (Array.isArray(obj)) { return true; }
-    //     if (typeof obj === 'function'
-    //     ||  typeof obj === 'string'
-    //     ||  obj instanceof Window) { return false; }
-    //     let length = obj.length;
-    //     return typeof length === "number" && (length === 0 || (length > 0 && (length - 1) in obj));
-    // }
+    function setConcatFn(fnName, classes) {
+        // Set function on classes
+        setFn(fnName, classes);
+        // Set function to set or concat all return values
+        setFn(fnName, LISTS, function () {
+            var args = arguments;
+            if (args.length) {
+                return each(this, function (_, el) {
+                    return el[fnName].apply(el, args);
+                });
+            }
+            var value = '';
+            each(this, function (_, el) {
+                value += el[fnName]() || '';
+            });
+            return value.trim() || void 0;
+        });
+    }
+    function isArrayLike(obj) {
+        if (Array.isArray(obj)) {
+            return true;
+        }
+        if (typeof obj === 'function'
+            || typeof obj === 'string'
+            || obj instanceof Window) {
+            return false;
+        }
+        var length = obj.length;
+        return typeof length === "number" && (length === 0 || (length > 0 && (length - 1) in obj));
+    }
+    function eachTokens(rawTokens, iterator) {
+        return rawTokens.split(' ').some(iterator);
+    }
     /* =============== GLOBAL =============== */
     var p$ = function (selector) {
         if (isType(selector, 'function')) {
@@ -829,5 +1001,5 @@
     p$.ajax = ajax;
     p$.post = post;
     p$.get = get;
-    WIN.p$ = p$;
+    return p$;
 })();

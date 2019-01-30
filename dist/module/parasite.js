@@ -1,5 +1,6 @@
 "use strict";
-(function () {
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.p$ = (function () {
     class ParasitedList {
         constructor() {
             this.length = 0;
@@ -19,9 +20,7 @@
             if (!obj.length) {
                 return this.push(obj);
             }
-            each(obj, (_, el) => {
-                this.push(el);
-            });
+            each(obj, (_, el) => { this.push(el); });
             return this;
         }
     }
@@ -29,7 +28,7 @@
     class Null {
     }
     Null.prototype = ParasitedList.prototype;
-    const GITHUB_URL = 'github/parasitejs';
+    const GITHUB_URL = 'github.com/ECRomaneli/ParasiteJS';
     const LISTS = [NodeList, HTMLCollection, ParasitedList];
     const ALL = [Document, Element, Window];
     const DOC_AND_ELEMS = [Document, Element];
@@ -70,7 +69,7 @@
         handler.__handler__ = function () {
             return handler.apply(el, arguments);
         };
-        return types.split(' ').forEach((type) => { this.addEventListener(type, handler.__handler__, capture); });
+        return eachTokens(types, (type) => { this.addEventListener(type, handler.__handler__, capture); });
     };
     pjs.one = function (types, handler, capture) {
         let el = this;
@@ -78,7 +77,7 @@
             this.removeEventListener(e.type, handler.__handler__, capture);
             return handler.apply(el, arguments);
         };
-        return types.split(' ').forEach((type) => {
+        return eachTokens(types, (type) => {
             this.addEventListener(type, handler.__handler__, capture);
         });
     };
@@ -86,7 +85,7 @@
         if (handler.__handler__) {
             handler = handler.__handler__;
         }
-        return types.split(' ').forEach((type) => {
+        return eachTokens(types, (type) => {
             this.removeEventListener(type, handler, capture);
         });
     };
@@ -122,6 +121,18 @@
         this.removeAttribute(prop);
     };
     pjs.val = function (value) { return this.prop('value', value); };
+    pjs.text = function (text) {
+        if (!isSet(text)) {
+            return this.textContent;
+        }
+        this.textContent = text;
+    };
+    pjs.html = function (htmlStr) {
+        if (!isSet(htmlStr)) {
+            return this.innerHTML;
+        }
+        this.innerHTML = htmlStr;
+    };
     pjs.data = function (key, value) {
         if (!this.__dataset__) {
             this.__dataset__ = {};
@@ -133,7 +144,7 @@
             return this.__dataset__;
         }
         if (isSet(value)) {
-            this.dataset[key] = value;
+            this.__dataset__[key] = value;
             return this;
         }
         let data = this.__dataset__[key];
@@ -200,6 +211,11 @@
         let el = this.findId(type[2]); // id
         return el === NULL ? NULL : (new ParasitedList).push(el);
     };
+    pjs.not = function (filter) {
+        return this.filter(typeof filter === 'string' ?
+            (_, elem) => !matches(elem, filter) :
+            (i, elem) => !filter.call(elem, i, elem));
+    };
     pjs.findAll = function (selector) {
         return this.querySelectorAll(selector);
     };
@@ -242,11 +258,43 @@
             return false;
         });
     };
+    pjs.findChildren = function (selector) {
+        let c = this.children;
+        return selector ? c.filter(selector) : c;
+    };
+    pjs.prepend = function () {
+        if (this.native_prepend) {
+            return this.native_prepend.apply(this, arguments);
+        }
+        setChildren(arguments, (child) => { this.insertBefore(child, this.firstChild); }, (str) => { this.textContent = str + this.textContent; }, true);
+    };
+    pjs.prependTo = function (selector) {
+        DOC.find(selector).prepend(this);
+        return this;
+    };
+    pjs.append = function () {
+        if (this.native_append) {
+            return this.native_append.apply(this, arguments);
+        }
+        setChildren(arguments, (child) => { this.appendChild(child); }, (str) => { this.textContent += str; });
+    };
+    pjs.appendTo = function (selector) {
+        DOC.find(selector).append(this);
+        return this;
+    };
     pjs.parent = function (selector) {
         let elem = this.parentElement;
         if (elem && matches(elem, selector)) {
             return elem;
         }
+    };
+    pjs.parents = function (selector) {
+        let parents = new ParasitedList, newParents = this.parent();
+        do {
+            parents.concat(newParents);
+            newParents = newParents.parent();
+        } while (newParents.length);
+        return parents.filter(selector);
     };
     pjs.each = function (iterator) {
         return each(this, iterator);
@@ -257,6 +305,44 @@
         }
         return index < this.length ? this[index] : void 0;
     };
+    pjs.hasClass = function (className) {
+        return eachTokens(className, (name) => {
+            return this.classList.contains(name);
+        });
+    };
+    pjs.addClass = function (className) {
+        eachTokens(className, (name) => {
+            this.classList.add(name);
+        });
+    };
+    pjs.removeClass = function (className) {
+        eachTokens(className, (name) => {
+            this.classList.remove(name);
+        });
+    };
+    pjs.toggleClass = function (className) {
+        eachTokens(className, (name) => {
+            this.classList.toggle(name);
+        });
+    };
+    // Rename
+    pjs.remove = function (selector) {
+        if (!matches(this, selector)) {
+            return;
+        }
+        if (this.native_remove) {
+            this.native_remove();
+        }
+        else if (this.removeNode) {
+            this.removeNode();
+        }
+        else {
+            this.outerHTML = '';
+        }
+    };
+    pjs.empty = function () {
+        emptyElement(this);
+    };
     /* =============== PARASITE FUNCTIONS =============== */
     // FINDS, PARENTS
     setFirstFn('findId', DOC_AND_ELEMS);
@@ -266,21 +352,38 @@
     setListFn('findClass', DOC_AND_ELEMS);
     setListFn('findAll', DOC_AND_ELEMS);
     setListFn('find', DOC_AND_ELEMS);
+    setListFn('parents', ELEMS);
     setListFn('parent', ELEMS);
+    setListFn('findChildren', DOC_AND_ELEMS);
     setFirstFn('is', ELEMS);
     setFn('filter', LISTS);
+    setFn('not', LISTS);
     setFn('get', LISTS);
+    // CLASSES
+    setEachFn('addClass', ELEMS);
+    setEachFn('toggleClass', ELEMS);
+    setEachFn('removeClass', ELEMS);
+    setFirstFn('hasClass', ELEMS);
     // EVENTS
     setEachFn('on', ALL);
     setEachFn('one', ALL);
     setEachFn('off', ALL);
     setEachFn('trigger', ALL);
+    // ELEMENT MANIPULATION
+    setEachFn('prepend', ELEMS);
+    setEachFn('prependTo', ELEMS);
+    setEachFn('append', ELEMS);
+    setEachFn('appendTo', ELEMS);
+    setEachFn('remove', ELEMS);
+    setEachFn('empty', DOC_AND_ELEMS);
     // ATTRS AND PROPS
     setAcessorFn('attr', ELEMS);
     setEachFn('removeAttr', ELEMS);
     setAcessorFn('prop', ELEMS);
     setEachFn('removeProp', ELEMS);
     setAcessorFn('val', ELEMS);
+    setConcatFn('text', DOC_AND_ELEMS);
+    setFirstFn('html', ELEMS);
     setAcessorFn('data', ELEMS);
     // STYLE
     setAcessorFn('css', ELEMS);
@@ -430,6 +533,38 @@
         const script = DOC.createElement('script');
         script.src = file;
         DOC.body.appendChild(script);
+    }
+    function setChildren(children, elemInsertFn, stringInsertFn, reverse) {
+        let forEach, length = children.length;
+        if (reverse) {
+            forEach = (fn) => {
+                for (let i = length - 1; i >= 0; i--) {
+                    fn(children[i]);
+                }
+            };
+        }
+        else {
+            forEach = (fn) => {
+                for (let i = 0; i < length; i++) {
+                    fn(children[i]);
+                }
+            };
+        }
+        forEach((child) => {
+            // If arrayLike
+            if (isArrayLike(child)) {
+                return setChildren(child, elemInsertFn, stringInsertFn);
+            }
+            // If string
+            if (isType(child, ['string', 'number'])) {
+                return stringInsertFn(child);
+            }
+            // If node with no parent
+            if (!child.parentElement) {
+                return elemInsertFn(child);
+            }
+            return stringInsertFn(child.outerHTML);
+        });
     }
     function ready(handler) {
         if (DOC.readyState !== 'loading') {
@@ -697,11 +832,18 @@
             return;
         }
         classes.forEach((cl) => {
-            if (cl.prototype[fnName]) {
-                console.warn(`The property ${fnName} already exists, please describe your issue on ${GITHUB_URL}.`, cl);
-                cl.prototype['old_' + fnName] = cl.prototype[fnName];
+            try {
+                if (cl.prototype[fnName]) {
+                    // console.warn(`The property "${fnName}" already exists, please describe your issue on ${GITHUB_URL}.`);
+                    // console.error('Already exists on: ', cl);
+                    cl.prototype['native_' + fnName] = cl.prototype[fnName];
+                }
+                cl.prototype[fnName] = fn;
             }
-            cl.prototype[fnName] = fn;
+            catch (e) {
+                console.warn(`The property "${fnName}" is not accessible, please describe your issue on ${GITHUB_URL}.`);
+                console.error(e);
+            }
         });
     }
     function setAcessorFn(fnName, classes) {
@@ -763,14 +905,39 @@
             });
         });
     }
-    // function isArrayLike(obj): boolean {
-    //     if (Array.isArray(obj)) { return true; }
-    //     if (typeof obj === 'function'
-    //     ||  typeof obj === 'string'
-    //     ||  obj instanceof Window) { return false; }
-    //     let length = obj.length;
-    //     return typeof length === "number" && (length === 0 || (length > 0 && (length - 1) in obj));
-    // }
+    function setConcatFn(fnName, classes) {
+        // Set function on classes
+        setFn(fnName, classes);
+        // Set function to set or concat all return values
+        setFn(fnName, LISTS, function () {
+            let args = arguments;
+            if (args.length) {
+                return each(this, (_, el) => {
+                    return el[fnName].apply(el, args);
+                });
+            }
+            let value = '';
+            each(this, (_, el) => {
+                value += el[fnName]() || '';
+            });
+            return value.trim() || void 0;
+        });
+    }
+    function isArrayLike(obj) {
+        if (Array.isArray(obj)) {
+            return true;
+        }
+        if (typeof obj === 'function'
+            || typeof obj === 'string'
+            || obj instanceof Window) {
+            return false;
+        }
+        let length = obj.length;
+        return typeof length === "number" && (length === 0 || (length > 0 && (length - 1) in obj));
+    }
+    function eachTokens(rawTokens, iterator) {
+        return rawTokens.split(' ').some(iterator);
+    }
     /* =============== GLOBAL =============== */
     const p$ = (selector) => {
         if (isType(selector, 'function')) {
@@ -798,5 +965,5 @@
     p$.ajax = ajax;
     p$.post = post;
     p$.get = get;
-    WIN.p$ = p$;
+    return p$;
 })();
