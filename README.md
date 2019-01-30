@@ -34,7 +34,7 @@ This project does not objective the module creation. This is a lightweight and f
 ### Module
 Require ``parasitejs`` and he goes modify lists, collections and elements:
 ```typescript
-    require('parasitejs')
+    const { p$ } = require('parasitejs')
 
     p$(() => {
 

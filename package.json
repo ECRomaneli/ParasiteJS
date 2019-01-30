@@ -1,6 +1,6 @@
 {
     "name": "parasitejs",
-    "version": "0.2.1",
+    "version": "0.3.0",
     "description": "Use javascript the way you want, fast as possible.",
     "scripts": {
         "build": "bash build.sh",
@@ -21,6 +21,14 @@
         "jquery-like",
         "lightweight"
     ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ECRomaneli/parasitejs.git"
+    },
+    "bugs": {
+        "url": "https://github.com/ECRomaneli/parasitejs/issues"
+    },
+    "homepage": "https://github.com/ECRomaneli/parasitejs#readme",
     "devDependencies": {
         "typescript": "3.2.2",
         "uglify-js": "3.4.9"
