@@ -81,7 +81,7 @@ export var p$ = (function () {
             return handler.apply(el, arguments);
         }
 
-        return eachTokens(types, (type) => { this.addEventListener(type, handler.__handler__, capture); });
+        eachTokens(types, (type) => { this.addEventListener(type, handler.__handler__, capture); });
     }
 
     pjs.one = function (types, handler, capture?) {
@@ -92,7 +92,7 @@ export var p$ = (function () {
             return handler.apply(el, arguments);
         }
 
-        return eachTokens(types, (type) => {
+        eachTokens(types, (type) => {
             this.addEventListener(type, handler.__handler__, capture);
         });
     }
@@ -100,7 +100,7 @@ export var p$ = (function () {
     pjs.off = function (types, handler, capture?) {
         if (handler.__handler__) { handler = handler.__handler__; }
 
-        return eachTokens(types, (type) => {
+        eachTokens(types, (type) => {
             this.removeEventListener(type, handler, capture);
         });
     }
@@ -361,7 +361,7 @@ export var p$ = (function () {
     }
 
     pjs.hasClass = function (className: string) {
-        return eachTokens(className, (name) => {
+        return someToken(className, (name) => {
             return this.classList.contains(name);
         });
     }
@@ -894,35 +894,6 @@ export var p$ = (function () {
         }
     }
 
-    function debug(times, fn1, fn2) {
-        let begin, time1, time2, count = times;
-
-        // Clear processor
-        for (let i = -10000; i < 10000; i++) { Math.abs(i); }
-
-        // Test 1
-        begin = Date.now();
-        while(count--) {
-            fn1();
-        }
-        time1 = Date.now() - begin;
-
-        if (!fn2) { return time1; }
-        
-        // Test 2
-        count = times;
-        begin = Date.now();
-        while (count--) {
-            fn2();
-        }
-        time2 = Date.now() - begin;
-
-        // Return
-        console.warn(`Function ${time2 > time1 ? '1' : '2'} is ${Math.abs(time2 - time1)}ms more fast!`);
-        console.warn(fn1(), fn2());
-        return [time1, time2];
-    }
-
     /* =============== INFECTION FUNCTIONS =============== */
 
     function setFn(fnName: string, classes: any[], fn: Function = pjs[fnName]) {
@@ -1047,7 +1018,11 @@ export var p$ = (function () {
         return typeof length === "number" && (length === 0 || (length > 0 && (length - 1) in obj));
     }
 
-    function eachTokens(rawTokens: string, iterator: (token: string) => any): boolean {
+    function eachTokens(rawTokens: string, iterator: (token: string) => any): void {
+        rawTokens.split(' ').forEach(iterator);
+    }
+
+    function someToken(rawTokens: string, iterator: (token: string) => any): boolean {
         return rawTokens.split(' ').some(iterator);
     }
 
@@ -1073,7 +1048,6 @@ export var p$ = (function () {
     p$.globalEval = globalEval;
     p$.parseHTML = parseHTML;
     p$.require = require;
-    p$.debug = debug;
     p$.ready = ready;
     p$.each = each;
     p$.ajax = ajax;

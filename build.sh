@@ -16,7 +16,7 @@ WEB_TARGET='es5'
 # Create module
 if  [ "$1" != 'web' ]; then
     echo 'Building module...'
-    ./node_modules/.bin/tsc
+    tsc
 fi
 
 # Create web lib
@@ -27,9 +27,9 @@ if  [ "$1" != 'module' ]; then
     cp -f ${LIB_PATH}*.ts ${TMP_PATH}
     sed -i s/^export\\s//g ${TMP_PATH}*.ts
     if [ "$APP_NAME" == '' ]; then
-        ./node_modules/.bin/tsc ${TMP_PATH}*.ts --module none --target ${WEB_TARGET} --outDir ${WEB_PATH}
+        tsc ${TMP_PATH}*.ts --module none --target ${WEB_TARGET} --outDir ${WEB_PATH}
     else
-        ./node_modules/.bin/tsc ${TMP_PATH}*.ts --module none --target ${WEB_TARGET} --out ${WEB_PATH}${APP_NAME}.js
+        tsc ${TMP_PATH}*.ts --module none --target ${WEB_TARGET} --out ${WEB_PATH}${APP_NAME}.js
     fi
     rm -rf ${TMP_PATH}
 
