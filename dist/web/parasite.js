@@ -73,7 +73,7 @@ var p$ = (function () {
         handler.__handler__ = function () {
             return handler.apply(el, arguments);
         };
-        return eachTokens(types, function (type) { _this.addEventListener(type, handler.__handler__, capture); });
+        eachTokens(types, function (type) { _this.addEventListener(type, handler.__handler__, capture); });
     };
     pjs.one = function (types, handler, capture) {
         var _this = this;
@@ -82,7 +82,7 @@ var p$ = (function () {
             this.removeEventListener(e.type, handler.__handler__, capture);
             return handler.apply(el, arguments);
         };
-        return eachTokens(types, function (type) {
+        eachTokens(types, function (type) {
             _this.addEventListener(type, handler.__handler__, capture);
         });
     };
@@ -91,7 +91,7 @@ var p$ = (function () {
         if (handler.__handler__) {
             handler = handler.__handler__;
         }
-        return eachTokens(types, function (type) {
+        eachTokens(types, function (type) {
             _this.removeEventListener(type, handler, capture);
         });
     };
@@ -320,7 +320,7 @@ var p$ = (function () {
     };
     pjs.hasClass = function (className) {
         var _this = this;
-        return eachTokens(className, function (name) {
+        return someToken(className, function (name) {
             return _this.classList.contains(name);
         });
     };
@@ -833,33 +833,6 @@ var p$ = (function () {
         };
         return Deferred;
     }());
-    function debug(times, fn1, fn2) {
-        var begin, time1, time2, count = times;
-        // Clear processor
-        for (var i = -10000; i < 10000; i++) {
-            Math.abs(i);
-        }
-        // Test 1
-        begin = Date.now();
-        while (count--) {
-            fn1();
-        }
-        time1 = Date.now() - begin;
-        if (!fn2) {
-            return time1;
-        }
-        // Test 2
-        count = times;
-        begin = Date.now();
-        while (count--) {
-            fn2();
-        }
-        time2 = Date.now() - begin;
-        // Return
-        console.warn("Function " + (time2 > time1 ? '1' : '2') + " is " + Math.abs(time2 - time1) + "ms more fast!");
-        console.warn(fn1(), fn2());
-        return [time1, time2];
-    }
     /* =============== INFECTION FUNCTIONS =============== */
     function setFn(fnName, classes, fn) {
         if (fn === void 0) { fn = pjs[fnName]; }
@@ -972,6 +945,9 @@ var p$ = (function () {
         return typeof length === "number" && (length === 0 || (length > 0 && (length - 1) in obj));
     }
     function eachTokens(rawTokens, iterator) {
+        rawTokens.split(' ').forEach(iterator);
+    }
+    function someToken(rawTokens, iterator) {
         return rawTokens.split(' ').some(iterator);
     }
     /* =============== GLOBAL =============== */
@@ -995,7 +971,6 @@ var p$ = (function () {
     p$.globalEval = globalEval;
     p$.parseHTML = parseHTML;
     p$.require = require;
-    p$.debug = debug;
     p$.ready = ready;
     p$.each = each;
     p$.ajax = ajax;
