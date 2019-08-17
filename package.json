@@ -1,6 +1,6 @@
 {
     "name": "parasitejs",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "description": "Use javascript the way you want, fast as possible.",
     "scripts": {
         "build": "bash build.sh",
