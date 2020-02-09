@@ -24,8 +24,7 @@ export var p$ = (function () {
     }
     ParasitedList.prototype.splice = Array.prototype.splice;
 
-    class Null {}
-    Null.prototype = ParasitedList.prototype;
+    class Null extends ParasitedList {}
 
     interface DOC extends Document { [key: string]: any }
     interface WIN extends Window { [key: string]: any }

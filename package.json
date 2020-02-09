@@ -1,9 +1,11 @@
 {
     "name": "parasitejs",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "description": "Use javascript the way you want, fast as possible.",
+    "main": "dist/module/parasite",
+    "typings": "dist/module/parasite",
     "scripts": {
-        "build": "bash build.sh",
+        "build": "sh build.sh",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "author": "ECRomaneli",

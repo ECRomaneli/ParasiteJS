@@ -1,3 +1,16 @@
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var p$ = (function () {
     var ParasitedList = /** @class */ (function () {
         function ParasitedList() {
@@ -25,12 +38,13 @@ var p$ = (function () {
         return ParasitedList;
     }());
     ParasitedList.prototype.splice = Array.prototype.splice;
-    var Null = /** @class */ (function () {
+    var Null = /** @class */ (function (_super) {
+        __extends(Null, _super);
         function Null() {
+            return _super !== null && _super.apply(this, arguments) || this;
         }
         return Null;
-    }());
-    Null.prototype = ParasitedList.prototype;
+    }(ParasitedList));
     var GITHUB_URL = 'github.com/ECRomaneli/ParasiteJS';
     var LISTS = [NodeList, HTMLCollection, ParasitedList];
     var ALL = [Document, Element, Window];
