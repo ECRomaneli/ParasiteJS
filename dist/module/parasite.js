@@ -161,7 +161,7 @@ exports.p$ = (function () {
             each(style, (style, value) => { this.css(style, value); });
             return this;
         }
-        if (!isSet(value)) {
+        if (isSet(value)) {
             if (typeof value === 'number') {
                 value = value + 'px';
             }
