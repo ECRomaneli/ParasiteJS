@@ -25,9 +25,8 @@ exports.p$ = (function () {
         }
     }
     ParasitedList.prototype.splice = Array.prototype.splice;
-    class Null {
+    class Null extends ParasitedList {
     }
-    Null.prototype = ParasitedList.prototype;
     const GITHUB_URL = 'github.com/ECRomaneli/ParasiteJS';
     const LISTS = [NodeList, HTMLCollection, ParasitedList];
     const ALL = [Document, Element, Window];
