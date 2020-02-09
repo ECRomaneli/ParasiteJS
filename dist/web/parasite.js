@@ -186,7 +186,7 @@ var p$ = (function () {
             each(style, function (style, value) { _this.css(style, value); });
             return this;
         }
-        if (!isSet(value)) {
+        if (isSet(value)) {
             if (typeof value === 'number') {
                 value = value + 'px';
             }
